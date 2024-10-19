@@ -17,10 +17,10 @@ Note: The scripts require [new PowerShell](https://github.com/PowerShell/PowerSh
 First, clone this repository:
 
 ```powershell
-git clone https://github.com/sharedwonder/windows-terminal-context-menu.git
+git clone https://github.com/AstruFlare/windows-terminal-context-menu.git
 ```
 
-- or download [the archive](https://github.com/sharedwonder/windows-terminal-context-menu/archive/main.zip) and extract it.
+- or download [the archive](https://github.com/AstruFlare/windows-terminal-context-menu/archive/main.zip) and extract it.
 
 Then open PowerShell and run `generate.ps1`.
 
@@ -34,8 +34,8 @@ Set-ExecutionPolicy Bypass -Scope Process
 
 `-Layout` : Indicates the menus layout
 
-- `Folded`: All profiles are in the tier-2 menu (default)
-- `Unfolded`: All profiles are in the tier-1 menu
+- `Compact`: All profiles are in the tier-2 menu (default)
+- `Flat`: All profiles are in the tier-1 menu
 - `Minimal`: Minimal layout (run with the default profile)
 
 `-Extended`: Whether the menus are extended
@@ -69,10 +69,10 @@ To remove the menus, please run `remove.ps1`.
 首先，克隆这个仓库：
 
 ```powershell
-git clone https://github.com/sharedwonder/windows-terminal-context-menu.git
+git clone https://github.com/AstruFlare/windows-terminal-context-menu.git
 ```
 
-- 或者下载[存档](https://github.com/sharedwonder/windows-terminal-context-menu/archive/main.zip)并将其解压。
+- 或者下载[存档](https://github.com/AstruFlare/windows-terminal-context-menu/archive/main.zip)并将其解压。
 
 然后打开 PowerShell 运行 `generate.ps1`。
 
@@ -86,8 +86,8 @@ Set-ExecutionPolicy Bypass -Scope Process
 
 `-Layout`：菜单布局
 
-- `Folded`：所有配置在二级菜单（默认）
-- `Unfolded`：所有配置在一级菜单
+- `Compact`：所有配置在二级菜单（默认）
+- `Flat`：所有配置在一级菜单
 - `Minimal`：迷你布局（以默认配置运行）
 
 `-Extended`：是否为扩展菜单

@@ -1,8 +1,8 @@
 #Requires -Version 6
 
 param (
-    [ValidateSet("Folded", "Unfolded", "Minimal")]
-    [string]$Layout = "Folded",
+    [ValidateSet("Compact", "Flat", "Minimal")]
+    [string]$Layout = "Compact",
 
     [ValidateSet("No", "Yes", "Admin")]
     [string]$Extended = "No",
@@ -101,7 +101,7 @@ function GetTerminalSettings() {
 function ExtractTerminalIcon() {
     $iconFile = "$Storage\terminal.ico"
     $tempPng = "$env:TEMP\temp.png"
-    [System.Drawing.Icon]::ExtractAssociatedIcon("$InstallDir\WindowsTerminal.exe").ToBitmap().Save($tempPng)
+    [Drawing.Icon]::ExtractAssociatedIcon("$InstallDir\WindowsTerminal.exe").ToBitmap().Save($tempPng)
     ConvertToIcon $tempPng $iconFile
     Remove-Item $tempPng
     return $iconFile
@@ -124,8 +124,8 @@ function ConvertToIcon([Parameter(Mandatory)][string]$file, [Parameter(Mandatory
     $height = $inputBitmap.Height
 
     $newBitmap = [Drawing.Bitmap]::new($inputBitmap, $width, $height)
-    $memoryStream = New-Object System.IO.MemoryStream
-    $newBitmap.Save($memoryStream, [System.Drawing.Imaging.ImageFormat]::Png)
+    $memoryStream = [IO.MemoryStream]::new()
+    $newBitmap.Save($memoryStream, [Drawing.Imaging.ImageFormat]::Png)
 
     if ($width -gt 255 -or $height -gt 255) {
         $ratio = ($height, $width | Measure-Object -Maximum).Maximum / 255
@@ -134,7 +134,7 @@ function ConvertToIcon([Parameter(Mandatory)][string]$file, [Parameter(Mandatory
     }
 
     $output = [IO.File]::Create($outputFile)
-    $iconWriter = [System.IO.BinaryWriter]::new($output)
+    $iconWriter = [IO.BinaryWriter]::new($output)
     $iconWriter.Write([byte]0)
     $iconWriter.Write([byte]0)
     $iconWriter.Write([short]1)
@@ -180,7 +180,7 @@ function GetProfileIcon([Parameter(Mandatory)]$wtProfile) {
                     ($wtProfile.icon -replace ("ms-appdata:///Roaming/", "") -replace ("/", "\"))
             }
         } else {
-            $iconFile = [System.Environment]::ExpandEnvironmentVariables($wtProfile.icon)
+            $iconFile = [Environment]::ExpandEnvironmentVariables($wtProfile.icon)
         }
     } else {
         if ($wtProfile.source -eq "Windows.Terminal.Wsl") {
@@ -205,7 +205,7 @@ function GetProfileIcon([Parameter(Mandatory)]$wtProfile) {
             return $iconCopy
         } elseif ($iconFile -match "\.exe$") {
             $tempPng = "$env:TEMP\temp.png"
-            [System.Drawing.Icon]::ExtractAssociatedIcon($iconFile).ToBitmap().Save($tempPng)
+            [Drawing.Icon]::ExtractAssociatedIcon($iconFile).ToBitmap().Save($tempPng)
             $iconCopy = "$Storage\icon-$guid.ico"
             ConvertToIcon $tempPng $iconCopy
             Remove-Item $tempPng
@@ -227,13 +227,13 @@ function AddMenuItemForProfile([Parameter(Mandatory)]$wtProfile, [Parameter(Mand
     Write-Host "Profile ${guid}: $name"
 
     $digits = 1
-    for ($x = [math]::Floor($index / 10); $x -ne 0; $x = [math]::Floor($x / 10)) {
+    for ($x = [Math]::DivRem($index, 10).Item1; $x -ne 0; $x = [Math]::DivRem($x, 10).Item1) {
         ++$digits
     }
     $order = "0" * (10 - $digits) + $index
 
     $icon = GetProfileIcon $wtProfile
-    if ($Layout -ne "Folded" -or $index -ge 36) {
+    if ($Layout -ne "Compact" -or $index -ge 36) {
         $display = $name
     } elseif ($index -ge 10) {
         $display = "$name (&$([char]($index - 10 + 65)))"
@@ -243,15 +243,15 @@ function AddMenuItemForProfile([Parameter(Mandatory)]$wtProfile, [Parameter(Mand
         $display = "$name (&$([char]($index + 1 + 48)))"
     }
 
-    if ($Layout -eq "Folded") {
+    if ($Layout -eq "Compact") {
         $key = "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\WindowsTerminalContextMenu\shell\$order-$guid"
-    } elseif ($Layout -eq "Unfolded") {
+    } elseif ($Layout -eq "Flat") {
         $key = "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\WindowsTerminalContextMenu-$order"
     }
     $command = "wscript `"$Storage\launch.vbs`" `"%V\.`" $guid"
 
     New-Item -Path $key -Force | Out-Null
-    if ($Layout -eq "Unfolded") {
+    if ($Layout -eq "Flat") {
         New-ItemProperty -Path $key -Name "(Default)" -PropertyType String -Value $display | Out-Null
     } else {
         New-ItemProperty -Path $key -Name "MUIVerb" -PropertyType String -Value $display | Out-Null
@@ -260,7 +260,7 @@ function AddMenuItemForProfile([Parameter(Mandatory)]$wtProfile, [Parameter(Mand
     New-Item -Path "$key\command" | Out-Null
     New-ItemProperty -Path "$key\command" -Name "(Default)" -PropertyType String -Value $command | Out-Null
 
-    if ($Layout -eq "Unfolded") {
+    if ($Layout -eq "Flat") {
         Copy-Item -Recurse "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\WindowsTerminalContextMenu-$order" `
             "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\Background\shell\WindowsTerminalContextMenu-$order" | Out-Null
 
@@ -272,15 +272,15 @@ function AddMenuItemForProfile([Parameter(Mandatory)]$wtProfile, [Parameter(Mand
     }
 
     if (-not $NoAdmin) {
-        if ($Layout -eq "Folded") {
+        if ($Layout -eq "Compact") {
             $key = "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\WindowsTerminalContextMenu-Elevated\shell\$order-$guid"
-        } elseif ($Layout -eq "Unfolded") {
+        } elseif ($Layout -eq "Flat") {
             $key = "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\WindowsTerminalContextMenu-Elevated-$order"
         }
         $command = "wscript `"$Storage\launch.vbs`" `"%V\.`" $guid -elevated"
 
         New-Item -Path $key -Force | Out-Null
-        if ($Layout -eq "Unfolded") {
+        if ($Layout -eq "Flat") {
             New-ItemProperty -Path $key -Name "(Default)" -PropertyType String -Value ("$display" + $Translations["admin-postfix"]) | Out-Null
         } else {
             New-ItemProperty -Path $key -Name "MUIVerb" -PropertyType String -Value $display | Out-Null
@@ -290,7 +290,7 @@ function AddMenuItemForProfile([Parameter(Mandatory)]$wtProfile, [Parameter(Mand
         New-Item -Path "$key\command" | Out-Null
         New-ItemProperty -Path "$key\command" -Name "(Default)" -PropertyType String -Value $command | Out-Null
 
-        if ($Layout -eq "Unfolded") {
+        if ($Layout -eq "Flat") {
             Copy-Item -Recurse "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\WindowsTerminalContextMenu-Elevated-$order" `
                 "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Drive\shell\WindowsTerminalContextMenu-Elevated-$order" | Out-Null
 
@@ -312,7 +312,7 @@ function AddMenu([Parameter(Mandatory)][string]$key, [Parameter(Mandatory)][int]
         if ($Extended -eq "Yes") {
             New-ItemProperty -Path $key -Name "Extended" -PropertyType String -Value "" | Out-Null
         }
-        if ($Layout -eq "Folded") {
+        if ($Layout -eq "Compact") {
             New-ItemProperty -Path $key -Name "ExtendedSubCommandsKey" -PropertyType String -Value "WindowsTerminalContextMenu" | Out-Null
         } elseif ($Layout -eq "Minimal") {
             New-Item -Path "$key\command" | Out-Null
@@ -324,7 +324,7 @@ function AddMenu([Parameter(Mandatory)][string]$key, [Parameter(Mandatory)][int]
         if ($Extended -eq "Yes" -or $Extended -eq "Admin") {
             New-ItemProperty -Path $key -Name "Extended" -PropertyType String -Value "" | Out-Null
         }
-        if ($Layout -eq "Folded") {
+        if ($Layout -eq "Compact") {
             New-ItemProperty -Path $key -Name "ExtendedSubCommandsKey" -PropertyType String -Value "WindowsTerminalContextMenu-Elevated" | Out-Null
         } elseif ($Layout -eq "Minimal") {
             New-Item -Path "$key\command" | Out-Null
@@ -334,7 +334,7 @@ function AddMenu([Parameter(Mandatory)][string]$key, [Parameter(Mandatory)][int]
 }
 
 function CreateMenus() {
-    if ($Layout -ne "Unfolded") {
+    if ($Layout -ne "Flat") {
         AddMenu "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\WindowsTerminalContextMenu" $false
         AddMenu "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\Background\shell\WindowsTerminalContextMenu" $false
         AddMenu "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Drive\shell\WindowsTerminalContextMenu" $false

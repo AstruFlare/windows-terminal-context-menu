@@ -3,7 +3,7 @@ $Storage = "$env:LocalAppData\WindowsTerminalContextMenu"
 if (Test-Path $Storage) {
     $Layout = Get-Content "$Storage\layout"
 
-    if ($Layout -eq "Unfolded") {
+    if ($Layout -eq "Flat") {
         Remove-Item -Force -Recurse -ErrorAction Ignore "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\WindowsTerminalContextMenu-*"
         Remove-Item -Force -Recurse -ErrorAction Ignore "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\Background\shell\WindowsTerminalContextMenu-*"
         Remove-Item -Force -Recurse -ErrorAction Ignore "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Drive\shell\WindowsTerminalContextMenu-*"
